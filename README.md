@@ -8,7 +8,7 @@ To verify the semantic meaning of the extracted visual grid features, we also ap
 
 We provide supported CLIP models, results on MSCOCO image captioning, and other information below. We believe **this repo can facilitate the usage of powerful CLIP models**.
 
-## Supported CLIP Models
+## 1. Supported CLIP Models
 
 Currently this repo supports five visual extractor settings, including three **standard** pipelines used in official OpenAI CLIP repo and two additional **customized** pipelines supporting larger input resolution. You can refer to [this file](visual_extractor/customized.py) for more details about customizing your own visual backbones for different input and output resolution. In order to imporve training efficiency in image captioning task, we apply `AvgPool2d` to the output feature map to reduce grid features size in some settings without large performance degradation. We will support more CLIP models in the future.
 
@@ -76,11 +76,11 @@ Currently this repo supports five visual extractor settings, including three **s
 </tbody>
 </table>
 
-## Results on MSCOCO Image Captioning (Karpathy's Splits)
+## 2. Results on MSCOCO Image Captioning (Karpathy's Splits)
 
 We ran image captioning experiments on [X-modaler](https://github.com/YehLi/xmodaler) with the extracted CLIP grid features. We easily got comparable or superior results in transformer baseline using the default hyperparameters in X-modaler's transformer baseline, except for `SOLVER.BASE_LR=2e-4` in `ViT-B/16` and `ViT-B/32_448` teacher-forcing settings. The performance of transformer baseline using [BUTD features](https://github.com/peteanderson80/bottom-up-attention) is taken from [X-modaler's paper](https://arxiv.org/pdf/2108.08217.pdf).
 
-### Teacher forcing
+### 2.1 Teacher forcing
 
 | Name         | BLEU@1 | BLEU@2 | BLEU@3 | BLEU@4 | METEOR | ROUGE-L | CIDEr-D | SPICE |
 | :---:        | :---:  | :---:  | :---:  | :---:  | :---:  | :---:   | :---:   | :---: |
@@ -91,7 +91,7 @@ We ran image captioning experiments on [X-modaler](https://github.com/YehLi/xmod
 | RN101_448    | 78.1   | 62.3   | 48.4   | 37.5   | 29.0   | 58.0    | 122.9   | 22.2  |
 | ViT-B/32_448 | 75.8   | 59.6   | 45.9   | 35.1   | 27.8   | 56.3    | 114.2   | 21.0  |
 
-### Self-critical Reinforcement Learning
+### 2.2 Self-critical Reinforcement Learning
 
 | Name         | BLEU@1 | BLEU@2 | BLEU@3 | BLEU@4 | METEOR | ROUGE-L | CIDEr-D | SPICE |
 | :---:        | :---:  | :---:  | :---:  | :---:  | :---:  | :---:   | :---:   | :---: |
@@ -102,16 +102,16 @@ We ran image captioning experiments on [X-modaler](https://github.com/YehLi/xmod
 | RN101_448    | 81.7   | 66.9   | 52.6   | 40.5   | 29.9   | 59.7    | 136.1   | 23.9  |
 | ViT-B/32_448 | -      | -      | -      | -      | -      | -       | -       | -     |
 
-## Get Started
+## 3. Get Started
 
 **Note**: The extracted feature files **are compatible with** [X-modaler](https://github.com/YehLi/xmodaler), where you can setup your experiments about cross-modal analytics conveniently.
 
-### Requirements
+### 3.1 Requirements
 
 - PyTorch ≥ 1.9 and torchvision that matches the PyTorch installation. Install them together at pytorch.org to make sure of this
 - timm ≥ 0.4.5
 
-### Examples
+### 3.2 Examples
 
 1. Use CLIP `ViT-B/32` model to extract global textual features of MSCOCO sentences from `dataset_coco.json` in [Karpathy's released annotations](http://cs.stanford.edu/people/karpathy/deepimagesent/caption_datasets.zip).
 
@@ -155,19 +155,19 @@ CUDA_VISIBLE_DEVICES=0 python3 clip_visual_feats.py \
     --model_type_or_path 'RN101'
 ```
 
-### Speeding up feature extraction with Multiple GPUs
+### 3.3 Speeding up feature extraction with Multiple GPUs
 
 You can run the same script with same input list (i.e. `--image_list` or `--anno`) on another GPU (that can be from a different machine, provided that the disk to output the features is shared between the machines). The script will create a new feature extraction process that will only focus on processing the items that have not been processed yet, without overlapping with the other extraction process already running.
 
-## License
+## 4. License
 
 MIT
 
-## Acknowledgement
+## 5. Acknowledgement
 
 This repo used resources from [OpenAI CLIP](https://github.com/openai/CLIP), [timm](https://github.com/rwightman/pytorch-image-models), [CLIP-ViL](https://github.com/clip-vil/CLIP-ViL), [X-modaler](https://github.com/YehLi/xmodaler). The repo is implemented using PyTorch. We thank the authors for open-sourcing their awesome projects.
 
-## References
+## 6. References
 
 <p id="1">[1] How Much Can CLIP Benefit Vision-and-Language Tasks? Sheng Shen, Liunian Harold Li, Hao Tan,  Mohit Bansal, Anna Rohrbach, Kai-Wei Chang, Zhewei Yao, Kurt Keutzer. In Arxiv2021.</p>
 
