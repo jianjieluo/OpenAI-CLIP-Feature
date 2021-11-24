@@ -1,4 +1,4 @@
-# Extract OpenAI CLIP Features from Image and Text
+# Extracting OpenAI CLIP (Global/Grid) Features from Image and Text
 
 This repo aims at providing an easy to use and efficient code for extracting image & text features using the [official OpenAI CLIP models](https://github.com/openai/CLIP), which is also optimized for multi processing GPU feature extraction.
 
