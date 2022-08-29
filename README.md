@@ -84,22 +84,22 @@ We ran image captioning experiments on [X-modaler](https://github.com/YehLi/xmod
 
 | Name         | BLEU@1 | BLEU@2 | BLEU@3 | BLEU@4 | METEOR | ROUGE-L | CIDEr-D | SPICE |
 | :---:        | :---:  | :---:  | :---:  | :---:  | :---:  | :---:   | :---:   | :---: |
-| BUTD         | 76.4   | 60.3   | 46.5   | 35.8   | 28.2   | 56.7    | 116.6   | 21.3  |
+| BUTD_feat    | 76.4   | 60.3   | 46.5   | 35.8   | 28.2   | 56.7    | 116.6   | 21.3  |
 | RN101        | 77.3   | 61.3   | 47.7   | 36.9   | 28.7   | 57.5    | 120.6   | 21.8  |
 | ViT-B/32     | 76.4   | 60.3   | 46.5   | 35.6   | 28.1   | 56.7    | 116.9   | 21.2  |
 | ViT-B/16     | 78.0   | 62.1   | 48.2   | 37.2   | 28.8   | 57.6    | 122.3   | 22.1  |
-| RN101_448    | 78.1   | 62.3   | 48.4   | 37.5   | 29.0   | 58.0    | 122.9   | 22.2  |
+| RN101_448    | 78.0   | 62.4   | 48.9   | 38.0   | 29.0   | 57.9    | 123.6   | 22.1  |
 | ViT-B/32_448 | 75.8   | 59.6   | 45.9   | 35.1   | 27.8   | 56.3    | 114.2   | 21.0  |
 
 ### 2.2 Self-critical Reinforcement Learning
 
 | Name         | BLEU@1 | BLEU@2 | BLEU@3 | BLEU@4 | METEOR | ROUGE-L | CIDEr-D | SPICE |
 | :---:        | :---:  | :---:  | :---:  | :---:  | :---:  | :---:   | :---:   | :---: |
-| BUTD         | 80.5   | 65.4   | 51.1   | 39.2   | 29.1   | 58.7    | 130.0   | 23.0  |
+| BUTD_feat    | 80.5   | 65.4   | 51.1   | 39.2   | 29.1   | 58.7    | 130.0   | 23.0  |
 | RN101        | 81.3   | 66.4   | 52.1   | 40.3   | 29.6   | 59.6    | 134.2   | 23.4  |
 | ViT-B/32     | 79.9   | 64.6   | 50.4   | 38.5   | 29.0   | 58.6    | 129.6   | 22.8  |
 | ViT-B/16     | 82.0   | 67.3   | 53.1   | 41.1   | 29.9   | 59.8    | 136.6   | 23.8  |
-| RN101_448    | 81.7   | 66.9   | 52.6   | 40.5   | 29.9   | 59.7    | 136.1   | 23.9  |
+| RN101_448    | 81.6   | 66.9   | 52.6   | 40.6   | 29.9   | 59.8    | 136.2   | 23.9  |
 | ViT-B/32_448 | 79.9   | 64.6   | 50.4   | 38.7   | 28.8   | 58.4    | 127.8   | 22.6  |
 
 ## 3. Get Started
@@ -172,3 +172,5 @@ This repo used resources from [OpenAI CLIP](https://github.com/openai/CLIP), [ti
 <p id="1">[1] How Much Can CLIP Benefit Vision-and-Language Tasks? Sheng Shen, Liunian Harold Li, Hao Tan,  Mohit Bansal, Anna Rohrbach, Kai-Wei Chang, Zhewei Yao, Kurt Keutzer. In Arxiv2021.</p>
 
 <p id="2">[2] In Defense of Grid Features for Visual Question Answering. Huaizu Jiang, Ishan Misra, Marcus Rohrbach, Erik Learned-Miller, Xinlei Chen. In CVPR2020.</p>
+
+<p id="3">[3] X-modaler: A Versatile and High-performance Codebase for Cross-modal Analytics. Yehao Li, Yingwei Pan, Jingwen Chen, Ting Yao, Tao Mei. In ACMMM2021 Open Source Software Competition.</p>
