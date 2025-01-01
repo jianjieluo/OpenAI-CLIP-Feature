@@ -16,16 +16,18 @@ class Bottleneck(nn.Module):
         # all conv layers have stride 1. an avgpool is performed after the second convolution when stride > 1
         self.conv1 = nn.Conv2d(inplanes, planes, 1, bias=False)
         self.bn1 = nn.BatchNorm2d(planes)
+        self.relu1 = nn.ReLU(inplace=True)
 
         self.conv2 = nn.Conv2d(planes, planes, 3, padding=1, bias=False)
         self.bn2 = nn.BatchNorm2d(planes)
+        self.relu2 = nn.ReLU(inplace=True)
 
         self.avgpool = nn.AvgPool2d(stride) if stride > 1 else nn.Identity()
 
         self.conv3 = nn.Conv2d(planes, planes * self.expansion, 1, bias=False)
         self.bn3 = nn.BatchNorm2d(planes * self.expansion)
+        self.relu3 = nn.ReLU(inplace=True)
 
-        self.relu = nn.ReLU(inplace=True)
         self.downsample = None
         self.stride = stride
 
@@ -40,8 +42,8 @@ class Bottleneck(nn.Module):
     def forward(self, x: torch.Tensor):
         identity = x
 
-        out = self.relu(self.bn1(self.conv1(x)))
-        out = self.relu(self.bn2(self.conv2(out)))
+        out = self.relu1(self.bn1(self.conv1(x)))
+        out = self.relu2(self.bn2(self.conv2(out)))
         out = self.avgpool(out)
         out = self.bn3(self.conv3(out))
 
@@ -49,7 +51,7 @@ class Bottleneck(nn.Module):
             identity = self.downsample(x)
 
         out += identity
-        out = self.relu(out)
+        out = self.relu3(out)
         return out
 
 
@@ -64,11 +66,11 @@ class AttentionPool2d(nn.Module):
         self.num_heads = num_heads
 
     def forward(self, x):
-        x = x.reshape(x.shape[0], x.shape[1], x.shape[2] * x.shape[3]).permute(2, 0, 1)  # NCHW -> (HW)NC
+        x = x.flatten(start_dim=2).permute(2, 0, 1)  # NCHW -> (HW)NC
         x = torch.cat([x.mean(dim=0, keepdim=True), x], dim=0)  # (HW+1)NC
         x = x + self.positional_embedding[:, None, :].to(x.dtype)  # (HW+1)NC
         x, _ = F.multi_head_attention_forward(
-            query=x, key=x, value=x,
+            query=x[:1], key=x, value=x,
             embed_dim_to_check=x.shape[-1],
             num_heads=self.num_heads,
             q_proj_weight=self.q_proj.weight,
@@ -86,8 +88,7 @@ class AttentionPool2d(nn.Module):
             training=self.training,
             need_weights=False
         )
-
-        return x[0]
+        return x.squeeze(0)
 
 
 class ModifiedResNet(nn.Module):
@@ -106,12 +107,14 @@ class ModifiedResNet(nn.Module):
         # the 3-layer stem
         self.conv1 = nn.Conv2d(3, width // 2, kernel_size=3, stride=2, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(width // 2)
+        self.relu1 = nn.ReLU(inplace=True)
         self.conv2 = nn.Conv2d(width // 2, width // 2, kernel_size=3, padding=1, bias=False)
         self.bn2 = nn.BatchNorm2d(width // 2)
+        self.relu2 = nn.ReLU(inplace=True)
         self.conv3 = nn.Conv2d(width // 2, width, kernel_size=3, padding=1, bias=False)
         self.bn3 = nn.BatchNorm2d(width)
+        self.relu3 = nn.ReLU(inplace=True)
         self.avgpool = nn.AvgPool2d(2)
-        self.relu = nn.ReLU(inplace=True)
 
         # residual layers
         self._inplanes = width  # this is a *mutable* variable used during construction
@@ -134,8 +137,9 @@ class ModifiedResNet(nn.Module):
 
     def forward(self, x):
         def stem(x):
-            for conv, bn in [(self.conv1, self.bn1), (self.conv2, self.bn2), (self.conv3, self.bn3)]:
-                x = self.relu(bn(conv(x)))
+            x = self.relu1(self.bn1(self.conv1(x)))
+            x = self.relu2(self.bn2(self.conv2(x)))
+            x = self.relu3(self.bn3(self.conv3(x)))
             x = self.avgpool(x)
             return x
 
@@ -356,8 +360,8 @@ class CLIP(nn.Module):
         text_features = self.encode_text(text)
 
         # normalized features
-        image_features = image_features / image_features.norm(dim=-1, keepdim=True)
-        text_features = text_features / text_features.norm(dim=-1, keepdim=True)
+        image_features = image_features / image_features.norm(dim=1, keepdim=True)
+        text_features = text_features / text_features.norm(dim=1, keepdim=True)
 
         # cosine similarity as logits
         logit_scale = self.logit_scale.exp()
@@ -415,7 +419,7 @@ def build_model(state_dict: dict):
     vocab_size = state_dict["token_embedding.weight"].shape[0]
     transformer_width = state_dict["ln_final.weight"].shape[0]
     transformer_heads = transformer_width // 64
-    transformer_layers = len(set(k.split(".")[2] for k in state_dict if k.startswith(f"transformer.resblocks")))
+    transformer_layers = len(set(k.split(".")[2] for k in state_dict if k.startswith("transformer.resblocks")))
 
     model = CLIP(
         embed_dim,

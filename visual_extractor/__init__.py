@@ -3,9 +3,11 @@ from .customized import *
 
 __factory = {
     # standard
+    'RN50x4': CLIPRN50X4,
     'RN101': CLIPRN101,
     'ViT-B/32': CLIPViTB32,
     'ViT-B/16': CLIPViTB16,
+    'ViT-L/14': CLIPViTL14,
 
     # custom
     'RN101_448': CLIPRN101_448,

@@ -1,5 +1,14 @@
 # Extracting OpenAI CLIP (Global/Grid) Features from Image and Text
 
+---
+
+## Updates (January 2025)
+
+1. Updated CLIP source code to support two new models: "RN50x64" and "ViT-L/14".
+2. Added examples for three public datasets: [Flickr30k](https://www.kaggle.com/datasets/hsankesara/flickr-image-dataset), [NoCaps](https://nocaps.org/), and [SynthImgCap](https://jianjieluo.github.io/SynthImgCap/#SynthImgCap).
+
+---
+
 This repo aims at providing an easy to use and efficient code for extracting image & text features using the [official OpenAI CLIP models](https://github.com/openai/CLIP), which is also optimized for multi processing GPU feature extraction.
 
 The [official OpenAI CLIP repo](https://github.com/openai/CLIP) only supports extracting global visual features, while the local grid features from CLIP visual models may also contain more detailed semantic information which can benefit multi visual-and-language downstream tasks[\[1\]](#1)[\[2\]](#2). As an alternative, this repo encapsulates minor-modified CLIP code in order to extract **not only global visual features but also local grid visual features** from different CLIP visual models. What's more, this repo is designed in a user-friendly object-oriented fashion, allowing users to add their customized `visual_extractor` classes **easily to customize different input and output grid resolution**.

@@ -6,7 +6,13 @@ import torch
 
 from .basic import BaseClipVisualExtractor
 
-__all__ = ["CLIPRN101", "CLIPViTB32", "CLIPViTB16"]
+__all__ = ["CLIPRN50X4", "CLIPRN101", "CLIPViTB32", "CLIPViTB16", "CLIPViTL14"]
+
+class CLIPRN50X4(BaseClipVisualExtractor):
+
+    def __init__(self, args, src_list, dst_list):
+        super(CLIPRN50X4, self).__init__(args, src_list, dst_list)
+
 
 class CLIPRN101(BaseClipVisualExtractor):
 
@@ -24,5 +30,13 @@ class CLIPViTB16(BaseClipVisualExtractor):
 
     def __init__(self, args, src_list, dst_list):
         super(CLIPViTB16, self).__init__(args, src_list, dst_list)
+        # downsample feature map
+        self.pool2d = torch.nn.AvgPool2d(kernel_size=(2, 2), stride=2)
+
+
+class CLIPViTL14(BaseClipVisualExtractor):
+
+    def __init__(self, args, src_list, dst_list):
+        super(CLIPViTL14, self).__init__(args, src_list, dst_list)
         # downsample feature map
         self.pool2d = torch.nn.AvgPool2d(kernel_size=(2, 2), stride=2)

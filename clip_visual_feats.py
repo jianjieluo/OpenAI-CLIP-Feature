@@ -18,7 +18,7 @@ def main(args):
     imgs = utils.read_lines(args.image_list)
 
     # build src_list & dst_list
-    src_list = [os.path.join(args.image_dir, img) for img in imgs]
+    src_list = [os.path.join(args.image_dir, img.split('.')[0] + '.{}'.format(args.src_postfix)) for img in imgs]
     dst_list = [os.path.join(args.output_dir, str(custom_path2id(img))+'.npz') for img in imgs]
     src_list, dst_list = utils.shuffle_list(src_list, dst_list)
 

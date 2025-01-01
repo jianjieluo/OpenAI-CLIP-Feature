@@ -2,11 +2,13 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import random
 import os
 import torch
 import numpy as np
 from tqdm import tqdm
 from PIL import Image
+import PIL
 from abc import ABCMeta
 
 import clip
@@ -36,8 +38,15 @@ class BaseClipVisualExtractor(object, metaclass=ABCMeta):
     def extract(self):
         self.model.eval()
         
-        for img_path, dst_path in zip(tqdm(self.src_list), self.dst_list):
+        pool = list(zip(self.src_list, self.dst_list))
+        random.shuffle(pool)
+        corrupt_img_ids = []
+
+        for (img_path, dst_path) in tqdm(pool):
             if os.path.isfile(dst_path):
+                continue
+
+            if self.args.skip_miss_img and os.path.exists(img_path) == False:
                 continue
             
             # load the image
@@ -45,7 +54,13 @@ class BaseClipVisualExtractor(object, metaclass=ABCMeta):
                 if self.args.debug:
                     img_path = './example/example.jpg'
                 
-                image = self.transform(Image.open(img_path).convert("RGB")).unsqueeze(0).to(device=self.device)
+                try:
+                    image = self.transform(Image.open(img_path).convert("RGB")).unsqueeze(0).to(device=self.device)
+                except PIL.UnidentifiedImageError:
+                    print("Corrupt image: ", img_path)
+                    corrupt_img_ids.append(img_path)
+                    continue
+
                 local_feat, global_feat = self.model.encode_image(image)
 
             if len(global_feat.shape) == 1:
@@ -74,3 +89,8 @@ class BaseClipVisualExtractor(object, metaclass=ABCMeta):
                 features=local_feat,
                 g_feature=global_feat
             )
+
+        print('#Corrupt_imgs: ', len(corrupt_img_ids))
+        with open('corrupt_img_ids.txt', 'w') as f:
+            for x in corrupt_img_ids:
+                f.write(x+'\n')

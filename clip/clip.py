@@ -32,8 +32,11 @@ _MODELS = {
     "RN101": "https://openaipublic.azureedge.net/clip/models/8fa8567bab74a42d41c5915025a8e4538c3bdbe8804a470a72f30b0d94fab599/RN101.pt",
     "RN50x4": "https://openaipublic.azureedge.net/clip/models/7e526bd135e493cef0776de27d5f42653e6b4c8bf9e0f653bb11773263205fdd/RN50x4.pt",
     "RN50x16": "https://openaipublic.azureedge.net/clip/models/52378b407f34354e150460fe41077663dd5b39c54cd0bfd2b27167a4a06ec9aa/RN50x16.pt",
+    "RN50x64": "https://openaipublic.azureedge.net/clip/models/be1cfb55d75a9666199fb2206c106743da0f6468c9d327f3e0d0a543a9919d9c/RN50x64.pt",
     "ViT-B/32": "https://openaipublic.azureedge.net/clip/models/40d365715913c9da98579312b702a82c18be219cc2a73407c4526f58eba950af/ViT-B-32.pt",
     "ViT-B/16": "https://openaipublic.azureedge.net/clip/models/5806e77cd80f8b59890b7e101eabd078d9fb84e6937f9e85e4ecb61988df416f/ViT-B-16.pt",
+    "ViT-L/14": "https://openaipublic.azureedge.net/clip/models/b8cca3fd41ae0c99ba7e8951adf17d267cdb84cd88be6f7c2e0eca1737a03836/ViT-L-14.pt",
+    "ViT-L/14@336px": "https://openaipublic.azureedge.net/clip/models/3035c92b350959924f9f00213499208652fc7ea050643e8b385c2dac08641f02/ViT-L-14-336px.pt",
 }
 
 
@@ -64,7 +67,7 @@ def _download(url: str, root: str):
                 loop.update(len(buffer))
 
     if hashlib.sha256(open(download_target, "rb").read()).hexdigest() != expected_sha256:
-        raise RuntimeError(f"Model has been downloaded but the SHA256 checksum does not not match")
+        raise RuntimeError("Model has been downloaded but the SHA256 checksum does not not match")
 
     return download_target
 
@@ -120,16 +123,17 @@ def load(name: str, device: Union[str, torch.device] = "cuda" if torch.cuda.is_a
     else:
         raise RuntimeError(f"Model {name} not found; available models = {available_models()}")
 
-    try:
-        # loading JIT archive
-        model = torch.jit.load(model_path, map_location=device if jit else "cpu").eval()
-        state_dict = None
-    except RuntimeError:
-        # loading saved state dict
-        if jit:
-            warnings.warn(f"File {model_path} is not a JIT archive. Loading as a state dict instead")
-            jit = False
-        state_dict = torch.load(model_path, map_location="cpu")
+    with open(model_path, 'rb') as opened_file:
+        try:
+            # loading JIT archive
+            model = torch.jit.load(opened_file, map_location=device if jit else "cpu").eval()
+            state_dict = None
+        except RuntimeError:
+            # loading saved state dict
+            if jit:
+                warnings.warn(f"File {model_path} is not a JIT archive. Loading as a state dict instead")
+                jit = False
+            state_dict = torch.load(opened_file, map_location="cpu")
 
     if not jit:
         model = build_model(state_dict or model.state_dict()).to(device)
@@ -140,6 +144,14 @@ def load(name: str, device: Union[str, torch.device] = "cuda" if torch.cuda.is_a
     # patch the device names
     device_holder = torch.jit.trace(lambda: torch.ones([]).to(torch.device(device)), example_inputs=[])
     device_node = [n for n in device_holder.graph.findAllNodes("prim::Constant") if "Device" in repr(n)][-1]
+
+    def _node_get(node: torch._C.Node, key: str):
+        """Gets attributes of a node which is polymorphic over return type.
+        
+        From https://github.com/pytorch/pytorch/pull/82628
+        """
+        sel = node.kindOf(key)
+        return getattr(node, sel)(key)
 
     def patch_device(module):
         try:
@@ -152,7 +164,7 @@ def load(name: str, device: Union[str, torch.device] = "cuda" if torch.cuda.is_a
 
         for graph in graphs:
             for node in graph.findAllNodes("prim::Constant"):
-                if "value" in node.attributeNames() and str(node["value"]).startswith("cuda"):
+                if "value" in node.attributeNames() and str(_node_get(node, "value")).startswith("cuda"):
                     node.copyAttributes(device_node)
 
     model.apply(patch_device)
@@ -178,7 +190,7 @@ def load(name: str, device: Union[str, torch.device] = "cuda" if torch.cuda.is_a
                 for node in graph.findAllNodes("aten::to"):
                     inputs = list(node.inputs())
                     for i in [1, 2]:  # dtype can be the second or third argument to aten::to()
-                        if inputs[i].node()["value"] == 5:
+                        if _node_get(inputs[i].node(), "value") == 5:
                             inputs[i].node().copyAttributes(float_node)
 
         model.apply(patch_float)
@@ -190,7 +202,7 @@ def load(name: str, device: Union[str, torch.device] = "cuda" if torch.cuda.is_a
     return model, _transform(model.input_resolution.item())
 
 
-def tokenize(texts: Union[str, List[str]], context_length: int = 77, truncate: bool = False) -> torch.LongTensor:
+def tokenize(texts: Union[str, List[str]], context_length: int = 77, truncate: bool = False) -> Union[torch.IntTensor, torch.LongTensor]:
     """
     Returns the tokenized representation of given input string(s)
 
@@ -207,7 +219,8 @@ def tokenize(texts: Union[str, List[str]], context_length: int = 77, truncate: b
 
     Returns
     -------
-    A two-dimensional tensor containing the resulting tokens, shape = [number of input strings, context_length]
+    A two-dimensional tensor containing the resulting tokens, shape = [number of input strings, context_length].
+    We return LongTensor when torch version is <1.8.0, since older index_select requires indices to be long.
     """
     if isinstance(texts, str):
         texts = [texts]
@@ -215,7 +228,10 @@ def tokenize(texts: Union[str, List[str]], context_length: int = 77, truncate: b
     sot_token = _tokenizer.encoder["<|startoftext|>"]
     eot_token = _tokenizer.encoder["<|endoftext|>"]
     all_tokens = [[sot_token] + _tokenizer.encode(text) + [eot_token] for text in texts]
-    result = torch.zeros(len(all_tokens), context_length, dtype=torch.long)
+    if packaging.version.parse(torch.__version__) < packaging.version.parse("1.8.0"):
+        result = torch.zeros(len(all_tokens), context_length, dtype=torch.long)
+    else:
+        result = torch.zeros(len(all_tokens), context_length, dtype=torch.int)
 
     for i, tokens in enumerate(all_tokens):
         if len(tokens) > context_length:
